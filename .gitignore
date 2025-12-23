@@ -1,0 +1,33 @@
+# Phalcon-specific ignores
+/cache/
+/logs/
+/config/development/
+.phalcon/
+
+# Vendor dependencies
+/vendor/
+
+# Environment files
+.env
+.env.development
+.env.testing
+.env.production
+
+# IDE-specific files (optional, can be in a global gitignore)
+.idea/
+*.iml
+
+# Composer files
+/composer.lock
+
+# PHP temporary/log files
+*.log
+*.tmp
+
+# others
+backend1
+backend2
+.vscode
+frontend
+
+**/vendor/

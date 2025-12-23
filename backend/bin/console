@@ -1,0 +1,71 @@
+#!/usr/bin/env php
+<?php
+use Phalcon\Di\FactoryDefault;
+
+$root = dirname(__DIR__);
+$autoload = $root . "/vendor/autoload.php";
+if (!is_file($autoload)) {
+    fwrite(STDERR, "Composer autoload not found. Run: composer install\n");
+    exit(1);
+}
+require $autoload;
+
+require $root . "/app/Infrastructure/DbFactory.php";
+require $root . "/app/Database/MigrationRunner.php";
+require $root . "/app/Database/SeedRunner.php";
+
+$env = static function (string $key, $default = null) {
+    $v = getenv($key);
+    return $v === false || $v === "" ? $default : $v;
+};
+
+$config = (object) [
+    "db" => (object) [
+        "host" => $env("DB_HOST", "127.0.0.1"),
+        "port" => (int) $env("DB_PORT", "3306"),
+        "name" => $env("DB_NAME", "kyc"),
+        "user" => $env("DB_USER", "root"),
+        "pass" => $env("DB_PASS", ""),
+        "charset" => $env("DB_CHARSET", "utf8mb4"),
+    ],
+];
+
+$db = \App\Infrastructure\DbFactory::mysql($config->db);
+
+$argv = $_SERVER["argv"] ?? [];
+$cmd = $argv[1] ?? "";
+$fresh = in_array("--fresh", $argv, true);
+
+$runner = new \App\Database\MigrationRunner($db, $root);
+$seeder = new \App\Database\SeedRunner($db, $root);
+
+switch ($cmd) {
+    case "migrate":
+        if ($fresh) {
+            $runner->fresh();
+        }
+        $runner->migrate();
+        echo "Migrations completed.\n";
+        break;
+
+    case "seed":
+        $seeder->seed();
+        echo "Seed completed.\n";
+        break;
+
+    case "migrate:seed":
+        if ($fresh) {
+            $runner->fresh();
+        }
+        $runner->migrate();
+        $seeder->seed();
+        echo "Migrate + seed completed.\n";
+        break;
+
+    default:
+        echo "Usage:\n";
+        echo "  php bin/console migrate [--fresh]\n";
+        echo "  php bin/console seed\n";
+        echo "  php bin/console migrate:seed [--fresh]\n";
+        exit(1);
+}
